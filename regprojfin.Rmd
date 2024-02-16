@@ -1,0 +1,469 @@
+---
+title: "regprojfin"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Reading libraries
+```{r}
+library(psych)
+library(DescTools)
+library(olsrr)
+library(MASS)
+library(ggplot2)
+library(gridExtra)
+```
+
+
+#Reading dataset, removing variables to be predicted later
+```{r}
+df=read.csv("utrechthousingsmall.csv")
+names(df)
+#setting seed for reputability
+set.seed(1145)
+#selecting  2 random rows to predict later on
+selected_rows <- sample(nrow(df), 2)
+selected_rows
+# Remove the selected rows
+df2 <- df[-selected_rows, ]
+attach(df2)
+```
+
+
+
+#Histogram indepnent variable
+```{r}
+ggplot(df2, aes(x = retailvalue)) +
+  geom_histogram(binwidth = 100000, fill = "lightblue", color = "black") +
+  labs(title = "Retail Value", x = "Reatil Value", y = "Frequency")
+```
+
+
+#Histogram cont variables 
+```{r}
+p1<-ggplot(df2, aes(x = house.area)) +
+  geom_histogram(binwidth = 10, fill = "lightblue", color = "black") +
+  labs(title = "House Area", x = "House Area", y = "Frequency")
+
+p2<-ggplot(df2, aes(x = lot.area)) +
+  geom_histogram(binwidth = 10, fill = "lightblue", color = "black") +
+  labs(title = "Lot Area", x = "lot Area ", y = "Frequency")
+
+p3<-ggplot(df2, aes(x = lot.len)) +
+  geom_histogram(binwidth = 2, fill = "lightblue", color = "black") +
+  labs(title = "Lot Length", x = "Lot Length", y = "Frequency")
+
+p4<-ggplot(df2, aes(x = lot.width)) +
+  geom_histogram(binwidth = 1, fill = "lightblue", color = "black") +
+  labs(title = "Lot Width", x = "Lot Width", y = "Frequency")
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+```
+#remaining histogrmas
+```{r}
+p5<-ggplot(df2, aes(x = garden.size)) +
+  geom_histogram(binwidth = 10, fill = "lightblue", color = "black") +
+  labs(title = "Garden Size", x = "Garden Size", y = "Frequency")
+
+p6<-ggplot(df2, aes(x = buildyear)) +
+  geom_histogram(binwidth = 10, fill = "lightblue", color = "black") +
+  labs(title = "Build year", x = "Build Year", y = "Frequency")
+grid.arrange(p5, p6,ncol = 2)
+
+```
+
+#Plot matrix 
+```{r}
+dfc=subset(df2,select=c(lot.len,lot.width,house.area,garden.size,buildyear,
+                        taxvalue,zipcode,balcony,bathrooms,monument,x.coor,y.coor))
+pairs.panels(dfc)
+
+```
+
+#Declaring variables as factors
+```{r}
+#Declraing catgorical varables as factors 
+zipcode<-as.factor(zipcode)
+balcony<-as.factor(balcony)
+bathrooms<-as.factor(bathrooms)
+energy.eff<-as.factor(energy.eff)
+#y.coor<-as.factor(y.coor)
+#x.coor<-as.factor(x.coor)
+monument<-as.factor(monument)
+```
+
+
+#Intial model
+```{r}
+#Initial model(All variables)
+
+model1<-lm(formula=retailvalue~lot.len+lot.width+lot.area+ house.area+
+             +garden.size+balcony+buildyear+zipcode+bathrooms+
+             +taxvalue+energy.eff+monument)
+
+summary(model1)
+#High R^2 and high f value, with insignificant variables  colineartity
+#Colinearty is presnt as there is a large Fvalue small t ratio, so the variables are
+#insignficant but model is signficant
+
+#Checking vif and condition index checking vif
+ols_coll_diag(model1)
+```
+#2 model dropping tax value
+```{r}
+#Dropping tax value, factor loading above 0.7 part of co linear group , 
+#has equal values as house area in the factor loading.IN the row with highest column index and co linear with lot area as they both have values above 0.7
+model2<-lm(formula=retailvalue~lot.len+lot.width+lot.area+ house.area+
+             +garden.size+balcony+buildyear+zipcode+bathrooms+
+             +energy.eff+monument)
+summary(model2)
+#ANova to check if drooping tax value is worth it 
+anova(model2,model1)
+#p value =0.958,fail to reject H0 reduced model is better
+ols_coll_diag(model2)
+
+```
+
+#3 model dropping lot area
+```{r}
+model3<-lm(formula=retailvalue~lot.len+lot.width+ house.area+
+             +garden.size+balcony+buildyear+zipcode+bathrooms+
+             +energy.eff+monument)
+summary(model3)
+#checking removing lot area is worth it
+anova(model3,model2)
+#p value is 0.2387 worth it 
+
+#Checking if there is still multicolinearty
+#Checking vif and condition index checking vif
+ols_coll_diag(model3)
+#No multicolinearty in vif , but there is condition index
+#Highest cndition index value is between zipcode and built year,  set 14
+#The second highest is between lot.len ,lot.width and garden size set 13
+
+```
+
+#4 model dropping lot len
+```{r}
+#Dropping lot len the second corelated variable from model 3
+model4<-lm(formula=retailvalue~lot.width+ house.area+garden.size+
+             buildyear+balcony+zipcode+bathrooms+
+             +energy.eff+monument)
+anova(model4,model3)
+#worth it, pvalue =0.277
+summary(model4)
+ols_coll_diag(model4) 
+#No corelation in vif, but in the condition index there is corelation
+#only one zip category index is signficant, other categories are related to other variables
+```
+
+#5 model dropping zipcode or built year(Testing)
+```{r}
+model51<-lm(formula=retailvalue~lot.len+lot.width+ house.area+
+             +garden.size+balcony+zipcode+bathrooms+
+             +monument)
+anova(model51,model4)
+#anova said we should not drop build year
+model52<-lm(formula=retailvalue~lot.len+lot.width+ house.area+
+              +garden.size+balcony+buildyear+bathrooms+
+              +monument)
+anova(model52,model4)
+#anova said no drop zip code
+```
+
+#6 model and changing zipcode categroy
+```{r}
+#classifying zipcode as either signficant category or other 
+zipcode <- ifelse(zipcode == '3528','3528','other')
+model6<-lm(formula=retailvalue~lot.width+ house.area+garden.size+
+             buildyear+balcony+zipcode+bathrooms+
+             +energy.eff+monument)
+summary(model6)
+#Garden size is insignificant
+ols_coll_diag(model6)
+#correlated between lot width and house area
+```
+
+#Testing droping house area or lot.width  based on condition index corelation
+```{r}
+#Dropping lot.width
+model61<-lm(formula=retailvalue~house.area+garden.size+
+             buildyear+balcony+zipcode+bathrooms++energy.eff+monument)
+anova(model61,model6)
+#pvalue, less than 0.05 rejecct h0, full model is better will not drop lot.width
+
+#dropping house area
+model62<-lm(formula=retailvalue~lot.width+garden.size+          buildyear+balcony+zipcode+bathrooms++energy.eff+monument)
+anova(model62,model6)
+#pvalue, less than 0.05 rejecct h0,full model is better will not drop house.area
+
+
+
+```
+ 
+#7 model, Dropping insignficant variable garden.size
+```{r}
+model7<-lm(formula=retailvalue~lot.width+ house.area+
+             buildyear+balcony+zipcode+bathrooms+
+             +energy.eff+monument)
+summary(model7)
+anova(model7,model6)
+#pvaleu 0.5 drop value
+ols_coll_diag(model7)
+#no corelation in vif less than 10, condition index values above than 10 tested
+#first two between house area and lot width both tested with naova and said not to drop 
+#intrecept with build year
+```
+
+#plot model 7
+```{r}
+plot(model7)
+```
+
+#Transformation, to fix nice 
+```{r}
+#transformations using box cox , on cont. variables
+par(mfrow=c(2,2))
+bcha <- boxcox(retailvalue ~ house.area)
+(lambdaha <- bcha$x[which.max(bcha$y)])
+
+bclw <- boxcox(retailvalue ~ lot.width)
+(lambdalw <- bclw$x[which.max(bclw$y)])
+
+bcby<-boxcox(retailvalue ~ buildyear)
+(lambdaby <- bcby$x[which.max(bcby$y)])
+```
+#Model 8 wih transformation of variables 
+```{r}
+model8 <- lm(formula = retailvalue ~ I(lot.width^lambdalw) + I(house.area^lambdaha) +
+               I(buildyear^lambdaby) + balcony + zipcode + bathrooms +
+               energy.eff+monument)
+summary(model8)
+plot(model8)
+ols_coll_diag(model8)
+#High corelation in the condition index but non in the vif 
+#relation energy.eff,zipcodeother,buildyear,monumnet1,house.area
+
+```
+#Checking interaction between categorical variables 
+```{r}
+energy<-energy.eff
+#Checking interaction terms(zipcode+balcony+bathrooms+energy.eff+monument)
+par(mfrow=c(2,2))
+
+#yes 
+interaction.plot(zipcode,balcony,retailvalue)
+#no
+interaction.plot(zipcode,bathrooms,retailvalue)
+#mabye
+interaction.plot(zipcode,energy,retailvalue)
+#yes 
+interaction.plot(balcony,bathrooms,retailvalue)
+#yes 
+interaction.plot(balcony,energy,retailvalue)
+#one line 
+interaction.plot(bathrooms,energy,retailvalue)
+#maybe 
+interaction.plot(monument,energy,retailvalue)
+#yes
+interaction.plot(monument,bathrooms,retailvalue)
+#yes
+interaction.plot(monument,balcony,retailvalue)
+#yes
+interaction.plot(monument,zipcode,retailvalue)
+```
+#Testing einteraction variables that gave yes
+```{r}
+m11<-lm(formula=retailvalue~I(lot.width^lambdalw) + I(house.area^lambdaha) +
+          I(buildyear^lambdaby)+balcony*zipcode+bathrooms+
+          +energy.eff+monument)
+summary(m11)
+#interaction terms are insignificant and balcony variable
+m21<-lm(formula=retailvalue~I(lot.width^lambdalw) + I(house.area^lambdaha) +
+          I(buildyear^lambdaby)+balcony*bathrooms+zipcode
+        +energy.eff+monument)
+
+summary(m21)
+#one of interaction significant, all varaibles signifcant
+m31<-lm(formula=retailvalue~I(lot.width^lambdalw) + I(house.area^lambdaha) +
+          I(buildyear^lambdaby)+balcony*energy.eff+bathrooms+zipcode+monument
+        )
+summary(m31)
+#interaction terms are insignificant,all variables except zip
+m41<-lm(formula=retailvalue~I(lot.width^lambdalw) + I(house.area^lambdaha) +
+          I(buildyear^lambdaby)+balcony+energy.eff*bathrooms+zipcode+monument
+        )
+summary(m41)
+#na interaction term, balcony is insignficant 
+m51<-lm(formula=retailvalue~I(lot.width^lambdalw) + I(house.area^lambdaha) +
+          I(buildyear^lambdaby)+balcony+bathrooms+
+          +energy.eff*zipcode+monument)
+summary(m51)
+#insignficant interaction, balcony and energyy eff not signficant
+
+```
+```{r}
+
+m6<-lm(formula=retailvalue~I(lot.width^lambdalw) + I(house.area^lambdaha) +
+          I(buildyear^lambdaby)+balcony+zipcode+bathrooms+
+          +energy.eff*monument)
+summary(m6)
+m7<-lm(formula=retailvalue~I(lot.width^lambdalw) + I(house.area^lambdaha) +
+          I(buildyear^lambdaby)+balcony+zipcode+bathrooms*monument
+          +energy.eff)
+summary(m7)
+m8<-lm(formula=retailvalue~I(lot.width^lambdalw) + I(house.area^lambdaha) +
+          I(buildyear^lambdaby)+balcony*monument+zipcode+bathrooms+
+          +energy.eff)
+summary(m8)
+m9<-lm(formula=retailvalue~I(lot.width^lambdalw) + I(house.area^lambdaha) +
+          I(buildyear^lambdaby)+balcony+monument*zipcode+bathrooms+
+          +energy.eff)
+summary(m9)
+```
+
+
+#working with m2 best model from above 
+```{r}
+#model2
+m21<-lm(formula=retailvalue~I(lot.width^lambdalw) + I(house.area^lambdaha) +
+          I(buildyear^lambdaby)+balcony*bathrooms+zipcode
+        +energy.eff+monument)
+summary(m21)
+#removing   balcony interaction as one of the variables are insignificant
+m22<-lm(formula=retailvalue~I(lot.width^lambdalw) + I(house.area^lambdaha) +
+          I(buildyear^lambdaby)+balcony+bathrooms+zipcode+energy.eff+monument)
+summary(m22)
+anova(m22,m21)
+#reject take reduced model without interaction
+#all balcony become insgnficant 
+m23<-lm(formula=retailvalue~I(lot.width^lambdalw) + I(house.area^lambdaha) +
+          I(buildyear^lambdaby)+bathrooms+zipcode+energy.eff+bathrooms
+        +monument)
+summary(m23)
+anova(m23,m21)
+#Reject, reduced model is better
+#Dropping monuemnt varibales  as no catgories in it are signficant 
+m24<-lm(formula=retailvalue~I(lot.width^lambdalw) + I(house.area^lambdaha) +
+          I(buildyear^lambdaby)+bathrooms+zipcode+energy.eff)
+anova(m24,m21)
+# p value = 0.06 fail to reject h0, reduced model is better
+summary(m24)
+#The value of 2bathrooms was diffrent from our expication so we tested, interaction
+interaction.plot(zipcode,bathrooms,retailvalue)
+#No interaction
+interaction.plot(zipcode,energy.eff,retailvalue)
+#interaction presnt but when tested not signficant
+#between zipcode and bathrooms and zipcode and energy.eff 
+m25<-lm(formula=retailvalue~I(lot.width^lambdalw) + I(house.area^lambdaha) +
+          I(buildyear^lambdaby)+bathrooms*zipcode+energy.eff)
+#signficant
+summary(m25)
+par(mfrow=c(2,2))
+plot(m25)
+anova(m24,m25)
+ols_coll_diag(m25)
+#VIF shows no corealtion, but condition index does however the corealtion shown
+#was tested if we could treat befor.
+
+```
+
+#Final Model
+```{r}
+m25<-lm(formula=retailvalue~I(lot.width^lambdalw) + I(house.area^lambdaha) +
+          I(buildyear^lambdaby)+bathrooms*zipcode+energy.eff)
+summary(m25)
+par(mfrow=c(2,2))
+plot(m25)
+anova(m24,m25)
+ols_coll_diag(m25)
+```
+
+#chacking hadis distance
+```{r}
+#Checking hadis distance and cooks
+par(mfrow=c(1,2))
+ols_plot_hadi(m25) #plotting hadi's 4points
+ols_plot_cooksd_bar(m25)
+#points are 2,15,21,50,52,59
+```
+
+#checking points using resdiuals
+```{r}
+#It is the scaled difference between the ith fitted value obtained from the full data 
+#and the ith fitted value obtained by deleting the ith observation. DFFIT - difference 
+#in fits, is used to identify influential data points. It quantifies the number of standard 
+#deviations that the fitted value changes when the ith data point is omitted.
+ols_plot_dffits(m25)
+#Standardized Residual Chart. Chart for detecting outliers. Standardized residual 
+#(internally studentized) is the residual divided by estimated standard deviatio
+ols_plot_resid_stand(m25)
+#Graph for detecting outliers.
+ols_plot_resid_stud_fit(m25)
+#common 2,15,59,35
+#uncommon 21,50,52
+#cooks wa hadi  2,15,21,50,52,59
+```
+#Testing removing points found 
+```{r}
+#Setting up dataset to be similar to the final data
+dfi<-df[,c("retailvalue","lot.width","house.area","buildyear","bathrooms",
+           "zipcode","energy.eff"), drop = FALSE]
+dfi["zipcode"]<-ifelse(dfi["zipcode"]== '3528','3528','other')
+dfi$bathrooms<-as.factor(dfi$bathrooms)
+dfi$energy.eff<-as.factor(dfi$energy.eff)
+dfi$zipcode<-as.factor(dfi$zipcode)
+dfi1<-dfi[-c(selected_rows,2, 15, 35),]
+m26<-lm(formula=retailvalue~I(lot.width^lambdalw) + I(house.area^lambdaha) +
+          I(buildyear^lambdaby)+bathrooms*zipcode+energy.eff,data=dfi1)
+summary(m26)
+##
+
+dfi2<-dfi[-c(selected_rows,21,50,52),]
+m27<-lm(formula=retailvalue~I(lot.width^lambdalw) + I(house.area^lambdaha) +
+          I(buildyear^lambdaby)+bathrooms*zipcode+energy.eff,data=dfi2)
+summary(m27)
+#
+dfi3<-dfi[-c(selected_rows,59),]
+m28<-lm(formula=retailvalue~I(lot.width^lambdalw) + I(house.area^lambdaha) +
+          I(buildyear^lambdaby)+bathrooms*zipcode+energy.eff,data=dfi3)
+summary(m28)
+#
+```
+
+#Predictions 
+```{r}
+dft<-dfi[selected_rows,]
+dft$bathrooms<-as.factor(dft$bathrooms)
+dft$energy.eff<-as.factor(dft$energy.eff)
+dft$zipcode<-as.factor(dft$zipcode)
+predictions <- predict(m25, newdata = dft)
+comparison_df <- cbind(dft, Predicted = predictions)
+comparison_df
+absolute_percentage_error<-abs(comparison_df$Predicted - comparison_df$retailvalue)/abs(comparison_df$Predicted)*100
+# Display the results
+print(paste(absolute_percentage_error))
+```
+
+#Predictions using the reduced models
+```{r}
+#m26,m27,m28
+predictions2<- predict(m26, newdata = dft)
+predictions3 <- predict(m27, newdata = dft)
+predictions4 <- predict(m28, newdata = dft)
+comparison_df <- cbind(dft, Predicted1=predictions,Predicted2 = predictions2,Predicted3 = predictions3, Predicted4 = predictions4)
+comparison_df
+
+absolute_percentage_error <- apply(comparison_df[, c("Predicted1", "Predicted2", "Predicted3", "Predicted4")], 2, function(x) {
+  abs(x - comparison_df$retailvalue) / abs(x) * 100
+})
+# Add the errors to the comparison_df
+comparison_df <- cbind(comparison_df, absolute_percentage_error)
+
+# Display the results
+print(comparison_df)
+```
+
+```
