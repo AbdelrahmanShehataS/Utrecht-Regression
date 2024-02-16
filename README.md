@@ -56,4 +56,8 @@ Qualitative, Categorical
 <img width="259" alt="image" src="https://github.com/AbdelrahmanShehataS/Utrecht-Regression/assets/125851664/c57c61f5-e5cb-4827-b65c-fc7aa62d6af2">
 
 
+
+
+
+
 The histogram shows that the retail values, which is our predicted variable, are roughly distributed like a normal curve with a slight skewness to the right. The bandwidth of the graph is set to 100k. 
