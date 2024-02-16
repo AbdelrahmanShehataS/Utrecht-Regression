@@ -54,14 +54,10 @@ Qualitative, Categorical
 <a name="Variable Distribution"/>
 
 # Predicted variables distribution
-img {
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  padding: 5px;
-  width: 150px;
-}
 
-<img width="259" alt="image" src="https://github.com/AbdelrahmanShehataS/Utrecht-Regression/assets/125851664/9c27747d-6b2f-4f36-af2d-6fa1fb255089">
+
+<img width="259" alt="paris" src="https://github.com/AbdelrahmanShehataS/Utrecht-Regression/assets/125851664/9c27747d-6b2f-4f36-af2d-6fa1fb255089">
+
 
 
 
