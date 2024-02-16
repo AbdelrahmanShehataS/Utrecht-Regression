@@ -52,9 +52,45 @@ monument: Some houses in Utrecht, especially older houses, are considered monume
 Qualitative, Categorical
 
 <a name="Variable Distribution"/>
-# Predicted variables distribution
-<img width="259" alt="image" src="https://github.com/AbdelrahmanShehataS/Utrecht-Regression/assets/125851664/c57c61f5-e5cb-4827-b65c-fc7aa62d6af2">
 
+# Predicted variables distribution
+
+prose:
+  rooturl: '/'
+  siteurl: 'http://prose.github.io/starter/'
+  relativeLinks: 'http://prose.github.io/starter/links.jsonp'
+  media: 'media'
+  ignore:
+    - index.md
+    - _config.yml
+    - /_layouts
+    - /_includes
+  metadata:
+    _posts:
+      - name: "layout"
+        field:
+          element: "hidden"
+          value: "blog"
+      - name: "tags"
+        field:
+          element: "multiselect"
+          label: "Add Tags"
+          placeholder: "Choose Tags"
+          options:
+            - name: "Apples"
+              value: "apples"
+            - name: "Bananas"
+              value: "bananas"
+    _posts/static:
+      - name: "layout"
+        field:
+          element: "hidden"
+          value: "page"
+      - name: "permalink"
+        field:
+          element: "text"
+          label: "Permalink"
+          value: ""
 
 
 
