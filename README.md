@@ -6,4 +6,48 @@ In the pursuit of formulating a prognostic framework for the market valuation of
 [Emphasis](#emphasis)  
 ...snip...    
 <a name="headers"/>
-## Headers
+## headers
+1.1 Variable Description 
+Dependent variable :
+
+retail value: the market value of a house. 
+Quantitative, Continuous, Euros
+Predictors:
+id: a number between 0 and 100000 that is a unique identifier for each house. 
+Qualitative, Categorical
+
+zip code: Each house has a zipcode corresponding to the area the house is in. 
+Qualitative, Categorical
+
+lot-len: the length in meters of the plot of land the house is built on.
+Quantitative, Continuous, Square Meters
+
+lot-width: the width in meters of the plot of land the house is built on. 
+Quantitative, Continuous, Square Meters
+
+Lot-area: the total area of the plot of land on which the house is built. 
+Quantitative, Continuous, Square meters
+
+house-area: The living area of the house is in square meters.
+Quantitative, Continuous, Square meters
+
+Garden-size: The size of the garden in square meters.
+Quantitative, Continuous, Square meters
+
+x-coor: the x-coordinate describing the location of the house.
+Qualitative, Categorical
+
+y-coor: the y-coordinate describing the location of the house. 
+Qualitative, Categorical
+
+build year: The year that the house was built.
+Quantitative, Discrete
+
+bathrooms: Number of bathrooms in the house
+Quantitative , Discrete
+
+energy-eff: This value is either 0 or 1. If it is 1, that means that the house is energy efficient. 
+Qualitative, Categorical
+
+monument: Some houses in Utrecht, especially older houses, are considered monuments. 
+Qualitative, Categorical
